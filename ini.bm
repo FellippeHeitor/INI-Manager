@@ -1,0 +1,368 @@
+'INI Manager
+'Fellippe Heitor, 2017 - fellippe@qb64.org - @fellippeheitor
+'
+
+FUNCTION ReadSetting$ (file$, __key$)
+    SHARED IniINFO$, currentIniFile$, IniFoundSection$, IniWholeFile$, IniLF$
+    SHARED IniPosition, IniCODE, IniDataType
+    SHARED IniNUMERIC, IniTEXT
+
+    IniDataType = 0
+    IniNUMERIC = 1: IniTEXT = 2
+
+    IniLoad file$
+    IF IniCODE THEN EXIT SUB
+
+    DIM Equal AS _UNSIGNED LONG, tempValue$, key$
+    DIM Quote AS _UNSIGNED LONG, Comment AS _UNSIGNED LONG
+    DIM i AS LONG, FoundLF AS _UNSIGNED LONG
+
+    key$ = LTRIM$(RTRIM$(__key$))
+    IniPosition = 0
+    IniFoundSection$ = ""
+
+    CheckKey:
+    IniPosition = INSTR(IniPosition + 1, LCASE$(IniWholeFile$), LCASE$(key$))
+
+    IF IniPosition > 0 THEN
+        'identify if this occurrence is actually a key and not part of a key name/value
+        FOR i = IniPosition - 1 TO 1 STEP -1
+            IF ASC(IniWholeFile$, i) = 10 THEN EXIT FOR
+            IF ASC(IniWholeFile$, i) <> 10 AND ASC(IniWholeFile$, i) <> 32 THEN
+                'not a key
+                GOTO CheckKey
+            END IF
+        NEXT
+
+        'check if there's nothing but an equal sign ahead
+        FOR i = IniPosition + LEN(key$) TO LEN(IniWholeFile$)
+            IF ASC(IniWholeFile$, i) = ASC("=") THEN EXIT FOR
+            IF ASC(IniWholeFile$, i) <> ASC("=") AND ASC(IniWholeFile$, i) <> 32 THEN
+                'not the key
+                GOTO CheckKey
+            END IF
+        NEXT
+
+        'so far so good; check if there is an assignment
+        Equal = INSTR(IniPosition, IniWholeFile$, "=")
+        FoundLF = INSTR(IniPosition, IniWholeFile$, IniLF$)
+
+        IF FoundLF > 0 THEN
+            IF Equal > FoundLF THEN GOTO CheckKey
+        ELSE
+            FoundLF = LEN(IniWholeFile$)
+            IF Equal = 0 THEN GOTO CheckKey
+        END IF
+
+        tempValue$ = LTRIM$(RTRIM$(MID$(IniWholeFile$, Equal + 1, FoundLF - Equal - 1)))
+
+        IF LEN(tempValue$) > 0 THEN
+            IF LEFT$(tempValue$, 1) = CHR$(34) THEN
+                tempValue$ = MID$(tempValue$, 2)
+                Quote = INSTR(tempValue$, CHR$(34))
+                IF Quote > 0 THEN
+                    tempValue$ = LEFT$(tempValue$, Quote - 1)
+                END IF
+            ELSE
+                Comment = INSTR(tempValue$, "'") 'BASIC style comments accepted
+                IF Comment = 0 THEN Comment = INSTR(tempValue$, ";")
+                IF Comment > 0 THEN
+                    tempValue$ = LTRIM$(RTRIM$(LEFT$(tempValue$, Comment - 1)))
+                END IF
+            END IF
+        ELSE
+            IniCODE = 2
+            IniINFO$ = "Empty value"
+        END IF
+    ELSE
+        IniCODE = 3
+        IniINFO$ = "Key not found"
+        EXIT FUNCTION
+    END IF
+
+    IF LTRIM$(STR$(VAL(tempValue$))) = tempValue$ AND Quote = 0 THEN
+        IniDataType = IniNUMERIC
+    ELSE
+        IniDataType = IniTEXT
+    END IF
+
+    ReadSetting$ = tempValue$
+
+    'Identify the section under which this value is stored, if any
+    DIM sectionCheck AS _UNSIGNED LONG, partialFile$
+    DIM Bracket2 AS _UNSIGNED LONG
+
+    partialFile$ = LEFT$(IniWholeFile$, IniPosition - 1)
+
+    CheckSection:
+    sectionCheck = INSTR(sectionCheck + 1, partialFile$, "[")
+    IF sectionCheck = 0 THEN
+        EXIT FUNCTION
+    ELSE
+        'identify if this occurrence is actually a section header and not something else
+        FOR i = sectionCheck - 1 TO 1 STEP -1
+            IF ASC(partialFile$, i) = 10 THEN EXIT FOR
+            IF ASC(partialFile$, i) <> 10 AND ASC(partialFile$, i) <> 32 THEN
+                'not a section
+                GOTO CheckSection
+            END IF
+        NEXT
+
+        'this may not be the last section
+        IF INSTR(sectionCheck + 1, partialFile$, "[") THEN GOTO CheckSection
+
+        'so far so good; check there's a closing bracket
+        Bracket2 = INSTR(sectionCheck, partialFile$, "]")
+        FoundLF = INSTR(sectionCheck, partialFile$, IniLF$)
+
+        IF FoundLF > 0 THEN
+            IF Bracket2 > FoundLF THEN GOTO CheckSection
+        ELSE
+            IF Bracket2 = 0 THEN GOTO CheckSection
+        END IF
+
+        'it seems we've got a section name
+        IniFoundSection$ = LTRIM$(RTRIM$(MID$(partialFile$, sectionCheck, Bracket2 - sectionCheck + 1)))
+    END IF
+END SUB
+
+SUB WriteSetting (file$, __section$, __key$, __value$)
+    SHARED IniPosition, IniCODE, IniINFO$, currentIniFile$
+    SHARED IniLF$, IniFoundSection$, IniWholeFile$
+
+    DIM tempValue$, fileNum AS INTEGER, currentIniFileLOF AS _UNSIGNED LONG
+    DIM section$, key$, value$, newFile$, thisLine$
+
+    'prepare variables for the write operation
+    section$ = LTRIM$(RTRIM$(__section$))
+    key$ = LTRIM$(RTRIM$(__key$))
+    value$ = LTRIM$(RTRIM$(__value$))
+
+    'sections are in the format [section name] - add brackets if not passed
+    IF LEFT$(section$, 1) <> "[" THEN section$ = "[" + section$
+    IF RIGHT$(section$, 1) <> "]" THEN section$ = section$ + "]"
+
+    IF LTRIM$(STR$(VAL(value$))) <> value$ THEN
+        'if not a numeric value and value contains spaces, add quotation marks
+        IF INSTR(value$, CHR$(32)) THEN value$ = CHR$(34) + value$ + CHR$(34)
+    END IF
+
+    tempValue$ = ReadSetting$(file$, key$)
+
+    fileNum = FREEFILE
+    IF IniCODE = 1 THEN
+        'file not found; create it and exit
+        OPEN file$ FOR OUTPUT AS #fileNum
+        IF LEN(section$) > 2 THEN
+            PRINT #fileNum, section$
+        END IF
+
+        PRINT #fileNum, key$ + "=" + value$;
+        CLOSE #fileNum
+
+        IniLoad file$
+        EXIT SUB
+    END IF
+
+    IF IniCODE = 0 OR IniCODE = 2 THEN 'key found and read back; write new value$
+        IF LCASE$(IniFoundSection$) = LCASE$(section$) OR LEN(section$) = 2 THEN
+            'at this point, IniPosition contains the exact byte position to write to;
+
+            IF value$ = tempValue$ THEN
+                IniCODE = 8
+                IniINFO$ = "Same value; no changes applied"
+                EXIT SUB
+            END IF
+
+            DIM nextLine AS _UNSIGNED LONG
+            nextLine = INSTR(IniPosition + 1, IniWholeFile$, IniLF$)
+
+            'create new file contents
+            newFile$ = LEFT$(IniWholeFile$, IniPosition - 1)
+            newFile$ = newFile$ + key$ + "=" + value$
+
+            IF nextLine > 0 THEN
+                newFile$ = newFile$ + MID$(IniWholeFile$, nextLine)
+            END IF
+
+            IF LEN(newFile) >= currentIniFileLOF THEN
+                'the new contents can overwrite the current file
+                OPEN currentIniFile$ FOR BINARY AS #fileNum
+                PUT #fileNum, 1, newFile$
+                CLOSE #fileNum
+            ELSE
+                'the new contents requires shrinking the current file;
+                'to do so, the current file will be deleted and a new
+                'one written in its place.
+                KILL currentIniFile$
+                OPEN currentIniFile$ FOR BINARY AS #fileNum
+                PUT #1, 1, newFile$
+                CLOSE #fileNum
+            END IF
+            IniWholeFile$ = newFile$
+            currentIniFileLOF = LEN(IniWholeFile$)
+
+            IniCODE = 4
+            IniINFO$ = "Key updated"
+        ELSEIF LEN(section$) > 2 THEN
+            'Rewrite this key into a new section$
+            nextLine = INSTR(IniPosition, IniWholeFile$, IniLF$)
+
+            newFile$ = LEFT$(IniWholeFile$, IniPosition - 1)
+
+            IF nextLine > 0 THEN
+                newFile$ = newFile$ + MID$(IniWholeFile$, nextLine + LEN(IniLF$))
+            END IF
+
+            IniWholeFile$ = newFile$
+            currentIniFileLOF = LEN(IniWholeFile$)
+
+            IniCODE = 6
+            IniINFO$ = "Key updated and moved to new section"
+
+            GOTO CreateKey
+        END IF
+    ELSEIF IniCODE = 3 THEN 'Key not found
+        IniCODE = 0
+        CreateKey:
+        IF LEN(section$) > 2 THEN 'if a section$ is passed, it'll be by now enclosed in []
+            'find this section$ in the current ini file;
+            DIM Bracket1 AS _UNSIGNED LONG, Bracket2 AS _UNSIGNED LONG, foundSection$
+            DIM beginSection AS _UNSIGNED LONG, endSection AS _UNSIGNED LONG
+            DIM currentPos AS _UNSIGNED LONG, i AS _UNSIGNED LONG
+
+            beginSection = 0
+            endSection = 0
+
+            CheckSection:
+            beginSection = INSTR(beginSection + 1, IniWholeFile$, section$)
+            IF beginSection = 0 THEN GOTO CreateSection
+
+            'identify if this occurrence is actually the section header and not something else
+            FOR i = beginSection - 1 TO 1 STEP -1
+                IF ASC(IniWholeFile$, i) = 10 THEN EXIT FOR
+                IF ASC(IniWholeFile$, i) <> 10 AND ASC(IniWholeFile$, i) <> 32 THEN
+                    'not the section header
+                    GOTO CheckSection
+                END IF
+            NEXT
+
+            'we found it; time to identify where this section ends
+            '(either another [section], a blank line or the end of the file
+            Bracket1 = INSTR(beginSection + 1, IniWholeFile$, "[")
+            IF Bracket1 > 0 THEN
+                FOR i = Bracket1 - 1 TO 1 STEP -1
+                    IF ASC(IniWholeFile$, i) = 10 THEN endSection = i + 1 - LEN(IniLF$): EXIT FOR
+                    IF i <= beginSection THEN EXIT FOR
+                NEXT
+            END IF
+
+            IF endSection > 0 THEN
+                'add values to the end of the specified section$
+                newFile$ = LEFT$(IniWholeFile$, endSection - 1)
+                newFile$ = newFile$ + key$ + "=" + value$ + IniLF$
+                IF MID$(IniWholeFile$, endSection, 2) <> IniLF$ THEN newFile$ = newFile$ + IniLF$
+                newFile$ = newFile$ + MID$(IniWholeFile$, endSection)
+            ELSE
+                'add values to the end of the file
+                newFile$ = IniWholeFile$
+                IF RIGHT$(newFile$, 2) = IniLF$ THEN
+                    newFile$ = newFile$ + key$ + "=" + value$
+                ELSE
+                    newFile$ = newFile$ + IniLF$ + key$ + "=" + value$
+                END IF
+            END IF
+
+            OPEN currentIniFile$ FOR BINARY AS #fileNum
+            PUT #fileNum, 1, newFile$
+            CLOSE #fileNum
+            IniWholeFile$ = newFile$
+            currentIniFileLOF = LEN(IniWholeFile$)
+
+            IF IniCODE = 0 THEN IniCODE = 7: IniINFO$ = "Key created in existing section"
+            EXIT SUB
+        ELSE
+            CreateSection:
+            newFile$ = IniWholeFile$
+            IF LEN(section$) = 2 THEN GOTO WriteAtTop
+
+            IF RIGHT$(newFile$, 4) = IniLF$ + IniLF$ THEN
+                newFile$ = newFile$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
+            ELSEIF RIGHT$(newFile$, 2) = IniLF$ THEN
+                newFile$ = newFile$ + IniLF$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
+            ELSE
+                newFile$ = newFile$ + IniLF$ + IniLF$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
+            END IF
+
+            OPEN currentIniFile$ FOR BINARY AS #fileNum
+            PUT #fileNum, 1, newFile$
+            CLOSE #fileNum
+            IniWholeFile$ = newFile$
+            currentIniFileLOF = LEN(IniWholeFile$)
+
+            IF IniCODE = 0 THEN
+                IniINFO$ = "New section created; new key added"
+            ELSE
+                IniINFO$ = "New section created; existing key moved"
+            END IF
+            IniCODE = 9
+            EXIT SUB
+        END IF
+
+        'if not found, key$=value$ is written to the beginning of the file
+        WriteAtTop:
+        newFile$ = key$ + "=" + value$ + IniLF$
+        IF LEFT$(LTRIM$(IniWholeFile$), 1) = "[" THEN newFile$ = newFile$ + IniLF$
+        newFile$ = newFile$ + IniWholeFile$
+
+        OPEN currentIniFile$ FOR BINARY AS #fileNum
+        PUT #fileNum, 1, newFile$
+        CLOSE fileNum
+
+        IniCODE = 5
+        IniINFO$ = "Orphan key created"
+    END IF
+END SUB
+
+SUB IniLoad (file$)
+    SHARED IniCODE, IniINFO$, currentIniFile$, IniLF$, IniWholeFile$
+
+    DIM fileNum AS INTEGER, currentIniFileLOF AS _UNSIGNED LONG
+
+    'Error messages are returned via the following variables:
+    IniCODE = 0: IniINFO$ = ""
+
+    'Passing an empty file$ is allowed if user already
+    'passed a valid file in this session.
+    IF currentIniFile$ = "" THEN
+        'initialization
+        IF _FILEEXISTS(file$) THEN
+            currentIniFile$ = file$
+
+            'Check if this ini file uses CRLF or LF
+            fileNum = FREEFILE
+            OPEN currentIniFile$ FOR BINARY AS #fileNum
+            currentIniFileLOF = LOF(fileNum)
+            IniWholeFile$ = SPACE$(currentIniFileLOF)
+            GET #fileNum, 1, IniWholeFile$
+            CLOSE #fileNum
+
+            IF INSTR(IniWholeFile$, CHR$(13)) THEN IniLF$ = CHR$(13) + CHR$(10) ELSE IniLF$ = CHR$(10)
+
+            IF RIGHT$(IniWholeFile$, 2) <> IniLF$ THEN IniWholeFile$ = IniWholeFile$ + IniLF$
+        ELSE
+            IniFileNotFound:
+            IniCODE = 1
+            IniINFO$ = "File '" + LTRIM$(RTRIM$(file$)) + "' not found"
+            $IF WIN THEN
+                IniLF$ = CHR$(13) + CHR$(10)
+            $ELSE
+                IniLF$ = CHR$(10)
+            $END IF
+            EXIT SUB
+        END IF
+    ELSEIF NOT _FILEEXISTS(currentIniFile$) THEN
+        currentIniFile$ = ""
+        GOTO IniFileNotFound
+    END IF
+END SUB
