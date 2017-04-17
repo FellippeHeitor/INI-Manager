@@ -29,9 +29,12 @@
 
 PRINT "Analyzing file test.ini"
 DO
+    'display bottom status bar
     r = CSRLIN: c = POS(1)
     LOCATE 25, 1: COLOR 0, 7: PRINT SPACE$(80);: LOCATE 25, 2: PRINT "(no input to quit; = to list all key/value pairs";: COLOR 7, 0
     LOCATE r, c
+
+    'read user input
     INPUT ; "Key to read: ", key$
     IF key$ = "=" THEN
         'list all key/value pairs
@@ -39,7 +42,7 @@ DO
         DO
             a$ = ReadSetting$("test.ini", "")
 
-            IF IniCODE = 1 THEN PRINT IniINFO$: END 'IniCODE = 1 -> File not found
+            IF IniCODE = 1 THEN PRINT IniINFO$: EXIT DO 'IniCODE = 1 -> File not found
             IF IniCODE = 10 THEN EXIT DO 'IniCODE = 10 -> No more keys found
 
             COLOR 7
@@ -50,6 +53,7 @@ DO
         LOOP
         PRINT "End of file."
     ELSEIF LEN(LTRIM$(RTRIM$(key$))) > 0 THEN
+        'read the key from the file
         a$ = ReadSetting$("test.ini", key$)
         IF IniCODE THEN
             PRINT

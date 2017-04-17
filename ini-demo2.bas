@@ -1,5 +1,7 @@
 'INI Manager - demo 2
 '
+'syntax: var$ = ReadSetting(file$, "")
+'
 'You can read all keys/values from an .ini file by calling
 'ReadSetting with an empty key$ value.
 '

@@ -16,7 +16,7 @@ WriteSetting "", "contact", "email", "fellippe@qb64.org"
 WriteSetting "", "contact", "twitter", "@FellippeHeitor"
 
 PRINT "File created/updated. I'll wait for you to check it with your editor of choice."
-PRINT "Hit ENTER to continue..."
+PRINT "Hit any key to continue..."
 a$ = INPUT$(1)
 
 'updating an existing key doesn't require passing the section$
