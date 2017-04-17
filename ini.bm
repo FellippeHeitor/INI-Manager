@@ -347,6 +347,8 @@ SUB IniLoad (file$)
     'Error messages are returned via the following variables:
     IniCODE = 0: IniINFO$ = ""
 
+    IF file$ <> "" AND currentIniFile$ <> file$ THEN currentIniFile$ = ""
+
     'Passing an empty file$ is allowed if user already
     'passed a valid file in this session.
     IF currentIniFile$ = "" THEN
