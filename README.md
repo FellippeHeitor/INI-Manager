@@ -23,14 +23,14 @@ More info at https://en.wikipedia.org/wiki/INI_file
 
 ## Library methods
 
-    WriteSetting file$, section$, key$, value$
+      WriteSetting file$, section$, key$, value$
 
 * file$ = the file name to write to. Can handle multiple .ini files at once. To work with a single file, you only need to pass file$ in the first write operation.
 * section$ = the [section] in the ini file where the new key$ will be added or where to move an existing key$.
 * key$ = the unique identifier of the value you wish to store.
 * value$ = the value to be stored. Numeric values must be converted to strings with STR$() first.
 
-    result$ = ReadSetting$(file$, key$)
+      result$ = ReadSetting$(file$, key$)
     
 * result$ = the variable where you'll store the value$ obtained from the file$.
 * file$ = the file name to be parsed. To work with a single file, you only need to pass file$ in the first read operation.
