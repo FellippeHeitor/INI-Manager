@@ -3,8 +3,9 @@
 '
 
 FUNCTION ReadSetting$ (file$, __key$)
-    SHARED IniINFO$, currentIniFile$, IniFoundSection$, IniWholeFile$, IniLF$
-    SHARED IniPosition, IniCODE, IniDataType
+    SHARED IniINFO$, currentIniFile$, IniFoundSection$, IniLastKey$, IniWholeFile$, IniLF$
+    SHARED IniPosition AS _UNSIGNED LONG, IniLastPosition AS _UNSIGNED LONG
+    SHARED IniCODE, IniDataType
     SHARED IniNUMERIC, IniTEXT
 
     IniDataType = 0
@@ -18,6 +19,14 @@ FUNCTION ReadSetting$ (file$, __key$)
     DIM i AS LONG, FoundLF AS _UNSIGNED LONG
 
     key$ = LTRIM$(RTRIM$(__key$))
+    IF key$ = "" THEN key$ = IniNextKey
+    IniLastKey$ = key$
+    IF key$ = "" THEN
+        IniCODE = 3
+        IniINFO$ = "Key not found"
+        EXIT SUB
+    END IF
+
     IniPosition = 0
     IniFoundSection$ = ""
 
@@ -88,6 +97,8 @@ FUNCTION ReadSetting$ (file$, __key$)
 
     ReadSetting$ = tempValue$
 
+    IniLastPosition = INSTR(IniPosition, IniWholeFile$, tempValue$)
+
     'Identify the section under which this value is stored, if any
     DIM sectionCheck AS _UNSIGNED LONG, partialFile$
     DIM Bracket2 AS _UNSIGNED LONG
@@ -127,7 +138,7 @@ FUNCTION ReadSetting$ (file$, __key$)
 END SUB
 
 SUB WriteSetting (file$, __section$, __key$, __value$)
-    SHARED IniPosition, IniCODE, IniINFO$, currentIniFile$
+    SHARED IniPosition AS _UNSIGNED LONG, IniCODE, IniINFO$, currentIniFile$
     SHARED IniLF$, IniFoundSection$, IniWholeFile$
 
     DIM tempValue$, fileNum AS INTEGER, currentIniFileLOF AS _UNSIGNED LONG
@@ -366,3 +377,23 @@ SUB IniLoad (file$)
         GOTO IniFileNotFound
     END IF
 END SUB
+
+FUNCTION IniNextKey$
+    SHARED IniLastPosition AS _UNSIGNED LONG, IniWholeFile$, currentIniFile$
+    DIM Equal AS _UNSIGNED LONG, keyBegin AS _UNSIGNED LONG
+    DIM i AS _UNSIGNED LONG
+
+    IF currentIniFile$ = "" THEN EXIT FUNCTION
+
+    FindKey:
+    Equal = INSTR(IniLastPosition, IniWholeFile$, "=")
+    IF Equal = 0 THEN EXIT FUNCTION
+
+    'identify if this occurrence is actually a key and not something else
+    FOR i = Equal - 1 TO 1 STEP -1
+        IF ASC(IniWholeFile$, i) = 10 THEN keyBegin = i + 1: EXIT FOR
+    NEXT
+    IF keyBegin = 0 THEN keyBegin = 1
+
+    IniNextKey$ = MID$(IniWholeFile$, keyBegin, Equal - keyBegin)
+END FUNCTION
