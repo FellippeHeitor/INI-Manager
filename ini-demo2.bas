@@ -22,6 +22,7 @@
 '   7 = Key created in existing section
 '   8 = Same value passed; no changes applied
 '   9 = New section created; key either moved or created
+'  10 = No more keys (when you fetch keys sequentially by passing "")
 '
 'You can also check what type of data was fetched using the variable
 'IniDataType. It'll return IniNUMERIC or IniTEXT

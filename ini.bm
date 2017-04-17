@@ -19,13 +19,16 @@ FUNCTION ReadSetting$ (file$, __key$)
     DIM i AS LONG, FoundLF AS _UNSIGNED LONG
 
     key$ = LTRIM$(RTRIM$(__key$))
-    IF key$ = "" THEN key$ = IniNextKey
-    IniLastKey$ = key$
+    IniLastKey$ = ""
     IF key$ = "" THEN
-        IniCODE = 3
-        IniINFO$ = "Key not found"
-        EXIT SUB
+        key$ = IniNextKey
+        IF key$ = "" THEN
+            IniCODE = 10
+            IniINFO$ = "No more keys"
+            EXIT SUB
+        END IF
     END IF
+    IniLastKey$ = key$
 
     IniPosition = 0
     IniFoundSection$ = ""
@@ -97,7 +100,7 @@ FUNCTION ReadSetting$ (file$, __key$)
 
     ReadSetting$ = tempValue$
 
-    IniLastPosition = INSTR(IniPosition, IniWholeFile$, tempValue$)
+    IniLastPosition = INSTR(IniPosition, IniWholeFile$, "=") + 1
 
     'Identify the section under which this value is stored, if any
     DIM sectionCheck AS _UNSIGNED LONG, partialFile$

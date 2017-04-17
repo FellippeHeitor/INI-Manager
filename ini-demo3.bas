@@ -6,8 +6,8 @@
 DO
     a$ = ReadSetting$("test.ini", "")
 
-    IF IniCODE = 1 THEN PRINT IniINFO$: EXIT DO 'IniCODE = 1 -> File not found
-    IF a$ = "" THEN EXIT DO
+    IF IniCODE = 1 THEN PRINT IniINFO$: END 'IniCODE = 1 -> File not found
+    IF IniCODE = 10 THEN EXIT DO 'IniCODE = 10 -> No more keys found
 
     COLOR 7
     PRINT IniFoundSection$;
@@ -15,5 +15,6 @@ DO
     COLOR 4: PRINT "=";
     COLOR 2: PRINT a$
 LOOP
+PRINT "End of file."
 
 '$include:'ini.bm'
