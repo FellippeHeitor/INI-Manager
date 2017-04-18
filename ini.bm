@@ -28,6 +28,13 @@ FUNCTION ReadSetting$ (file$, __key$)
             EXIT SUB
         END IF
     END IF
+
+    IF LEFT$(key$, 1) = ";" OR LEFT$(key$, 1) = "'" OR INSTR(key$, "[") > 0 OR INSTR(key$, "]") > 0 THEN
+        IniCODE = 12
+        IniINFO$ = "Invalid key"
+        EXIT SUB
+    END IF
+
     IniLastKey$ = key$
 
     IniPosition = 0
@@ -142,7 +149,8 @@ END SUB
 
 SUB WriteSetting (file$, __section$, __key$, __value$)
     SHARED IniPosition AS _UNSIGNED LONG, IniCODE, IniINFO$, currentIniFile$
-    SHARED IniLF$, IniFoundSection$, IniWholeFile$, currentIniFileLOF AS _UNSIGNED LONG
+    SHARED IniLF$, IniWholeFile$, currentIniFileLOF AS _UNSIGNED LONG
+    SHARED IniFoundSection$, IniLastKey$
 
     DIM tempValue$, fileNum AS INTEGER
     DIM section$, key$, value$, newFile$, thisLine$
@@ -162,6 +170,7 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
     END IF
 
     tempValue$ = ReadSetting$(file$, key$)
+    IF LEN(section$) > 2 THEN IniFoundSection$ = section$
 
     fileNum = FREEFILE
     IF IniCODE = 1 THEN
@@ -175,6 +184,12 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
         CLOSE #fileNum
 
         IniLoad file$
+        IF IniCODE = 0 THEN
+            IniCODE = 11
+            IniINFO$ = "File created; new key added"
+            IF LEN(section$) > 2 THEN IniFoundSection$ = section$
+            IniLastKey$ = key$
+        END IF
         EXIT SUB
     END IF
 
@@ -182,7 +197,7 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
         IF LCASE$(IniFoundSection$) = LCASE$(section$) OR LEN(section$) = 2 THEN
             'at this point, IniPosition contains the exact byte position to write to;
 
-            IF value$ = tempValue$ THEN
+            IF LTRIM$(RTRIM$(__value$)) = tempValue$ THEN
                 IniCODE = 8
                 IniINFO$ = "Same value; no changes applied"
                 EXIT SUB
@@ -387,7 +402,7 @@ END SUB
 FUNCTION IniNextKey$
     SHARED IniLastPosition AS _UNSIGNED LONG, IniWholeFile$, currentIniFile$
     DIM Equal AS _UNSIGNED LONG, keyBegin AS _UNSIGNED LONG
-    DIM i AS _UNSIGNED LONG
+    DIM i AS _UNSIGNED LONG, tempKey$
 
     IF currentIniFile$ = "" THEN EXIT FUNCTION
 
@@ -401,5 +416,11 @@ FUNCTION IniNextKey$
     NEXT
     IF keyBegin = 0 THEN keyBegin = 1
 
-    IniNextKey$ = MID$(IniWholeFile$, keyBegin, Equal - keyBegin)
+    tempKey$ = LTRIM$(RTRIM$(MID$(IniWholeFile$, keyBegin, Equal - keyBegin)))
+    IF LEFT$(tempKey$, 1) = ";" OR LEFT$(tempKey$, 1) = "'" OR INSTR(tempKey$, "[") > 0 OR INSTR(tempKey$, "]") > 0 THEN
+        IniLastPosition = Equal + 1
+        GOTO FindKey
+    END IF
+
+    IniNextKey$ = tempKey$
 END FUNCTION
