@@ -9,44 +9,40 @@
 '    key1=value1
 '    key2=
 '
-'To know what happened, use the global variables IniCODE and IniINFO$
-'Reference:
-'
-'   0 = Read operation successful
-'   1 = File not found
-'   2 = Empty value
-'   3 = Key not found
-'   4 = Key updated successfully
-'   5 = Orphan key created (outside existing sections)
-'   6 = Key updated and moved to new section
-'   7 = Key created in existing section
-'   8 = Same value passed; no changes applied
-'   9 = New section created; key either moved or created
-'  10 = No more keys (when you fetch keys sequentially by passing "")
-'
-'You can also check what type of data was fetched using the variable
-'IniDataType. It'll return IniNUMERIC or IniTEXT
+'To know what exactly happened, read the global variable IniCODE.
+'For a description of the status code, call IniINFO$(IniCODE)
+'----------------------------------------------------------------
 
-PRINT "Analyzing file test.ini"
+file$ = "test.ini"
+IF _FILEEXISTS(COMMAND$) THEN file$ = COMMAND$ 'passing an .ini will load it instead of test.ini
+
+PRINT "Analyzing file "; file$
 DO
     'display bottom status bar
     r = CSRLIN: c = POS(1)
-    LOCATE 25, 1: COLOR 0, 7: PRINT SPACE$(80);: LOCATE 25, 2: PRINT "(no input to quit; = to list all key/value pairs";: COLOR 7, 0
+    LOCATE 25, 1: COLOR 14, 6: PRINT SPACE$(80);: LOCATE 25, 2: PRINT "(no input to quit; = to list all key/value pairs";: COLOR 7, 0
     LOCATE r, c
 
     'read user input
-    INPUT ; "Key to read: ", key$
+    INPUT ; "Enter section/key to read: ", key$
+    IF INSTR(key$, "/") THEN
+        section$ = LEFT$(key$, INSTR(key$, "/") - 1)
+        key$ = MID$(key$, INSTR(key$, "/") + 1)
+    ELSE
+        section$ = ""
+    END IF
+
     IF key$ = "=" THEN
         'list all key/value pairs
         CLS
         DO
-            a$ = ReadSetting$("test.ini", "")
+            a$ = ReadSetting$(file$, "", "")
 
-            IF IniCODE = 1 THEN PRINT IniINFO$: EXIT DO 'IniCODE = 1 -> File not found
+            IF IniCODE = 1 THEN PRINT IniINFO$(IniCODE): EXIT DO 'IniCODE = 1 -> File not found
             IF IniCODE = 10 THEN EXIT DO 'IniCODE = 10 -> No more keys found
 
             COLOR 7
-            PRINT IniFoundSection$;
+            PRINT IniLastSection$;
             COLOR 15: PRINT IniLastKey$;
             COLOR 4: PRINT "=";
             COLOR 2: PRINT a$
@@ -54,21 +50,15 @@ DO
         PRINT "End of file."
     ELSEIF LEN(LTRIM$(RTRIM$(key$))) > 0 THEN
         'read the key from the file
-        a$ = ReadSetting$("test.ini", key$)
+        a$ = ReadSetting$(file$, section$, key$)
         IF IniCODE THEN
             PRINT
             COLOR 15, 4
-            PRINT "RETURN CODE: "; IniCODE, IniINFO$
+            PRINT "RETURN CODE: "; IniCODE, IniINFO$(IniCODE)
             COLOR 7, 0
         ELSE
             PRINT " = ";
             COLOR 0, 2: PRINT a$;: COLOR 7, 0: PRINT
-            IF LEN(IniFoundSection$) THEN PRINT "(found in section " + IniFoundSection$ + ")";
-            IF IniDataType = IniNUMERIC THEN 'numeric value
-                PRINT " (numeric value)"
-            ELSEIF IniDataType = IniTEXT THEN
-                PRINT " (text)"
-            END IF
         END IF
     ELSE
         PRINT "No input."

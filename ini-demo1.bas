@@ -4,9 +4,10 @@
 
 'write a new key/value pair to an .ini file or update an existing
 'if the file doesn't exist, it'll be created.
+'----------------------------------------------------------------
 
 '(brackets in section names are optional; will be added automatically anyway)
-WriteSetting "test.ini", "[general]", "version", "Beta 1"
+WriteSetting "test.ini", "[general]", "version", "Beta 2"
 
 'subsequent calls don't need to mention the file again
 WriteSetting "", "general", "date", DATE$
@@ -19,8 +20,7 @@ PRINT "File created/updated. I'll wait for you to check it with your editor of c
 PRINT "Hit any key to continue..."
 a$ = INPUT$(1)
 
-'updating an existing key doesn't require passing the section$
-WriteSetting "", "", "version", "Beta 1 - or is it alpha?"
+WriteSetting "", "general", "version", "Beta 2 - check the repo"
 
 PRINT "File updated again. Go check it if you will."
 END
