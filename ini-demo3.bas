@@ -32,11 +32,11 @@ DO
         section$ = ""
     END IF
 
-    IF key$ = "=" THEN
+    IF key$ = "=" OR (section$ > "" AND key$ = "") THEN
         'list all key/value pairs
         CLS
         DO
-            a$ = ReadSetting$(file$, "", "")
+            a$ = ReadSetting$(file$, section$, "")
 
             IF IniCODE = 1 THEN PRINT IniINFO$(IniCODE): EXIT DO 'IniCODE = 1 -> File not found
             IF IniCODE = 10 THEN EXIT DO 'IniCODE = 10 -> No more keys found
