@@ -519,7 +519,7 @@ FUNCTION IniNextKey$
     END IF
 
     IniNextKey$ = tempKey$
-    IniPosition = INSTR(IniWholeFile$, IniSectionData$) + Equal - 1
+    IniPosition = Equal
 END FUNCTION
 
 FUNCTION IniINFO$ (code)
