@@ -46,7 +46,7 @@ FUNCTION IniGetSection$ (__section$)
     SHARED IniLF$, IniWholeFile$, currentIniFileLOF AS _UNSIGNED LONG
 
     IF currentIniFileName$ = "" THEN IniCODE = 18: EXIT FUNCTION
-    IF currentIniFileLOF = 0 THEN IniCODE = 17: EXIT FUNCTION
+    IF currentIniFileLOF = 0 OR LEN(LTRIM$(RTRIM$(IniWholeFile$))) = 0 THEN IniCODE = 17: EXIT FUNCTION
 
     IniCODE = 0
 
@@ -125,9 +125,11 @@ FUNCTION ReadSetting$ (file$, __section$, __key$)
     SHARED IniLastSection$, IniLastKey$, IniWholeFile$, IniLF$
     SHARED IniPosition AS _UNSIGNED LONG, IniSectionData$
     SHARED IniCODE, IniAllowBasicComments
-
+    SHARED currentIniFileLOF AS _UNSIGNED LONG
     IniLoad file$
     IF IniCODE THEN EXIT SUB
+
+    IF currentIniFileLOF = 0 OR LEN(LTRIM$(RTRIM$(IniWholeFile$))) = 0 THEN IniCODE = 17: EXIT FUNCTION
 
     DIM Equal AS _UNSIGNED LONG, tempValue$, key$, section$
     DIM Quote AS _UNSIGNED LONG, Comment AS _UNSIGNED LONG
