@@ -1,11 +1,12 @@
 'INI Manager
 'Fellippe Heitor, 2017 - fellippe@qb64.org - @fellippeheitor
 
-SUB IniDeleteSection (__section$)
+SUB IniDeleteSection (file$, __section$)
     SHARED IniNewFile$, IniCODE, currentIniFileName$
     SHARED IniLF$, IniWholeFile$, currentIniFileLOF AS _UNSIGNED LONG
 
-    IF currentIniFileName$ = "" OR currentIniFileLOF = 0 THEN EXIT SUB
+    IniLoad file$
+    IF IniCODE THEN EXIT SUB
 
     DIM a$
     IniCODE = 0
@@ -126,6 +127,7 @@ FUNCTION ReadSetting$ (file$, __section$, __key$)
     SHARED IniPosition AS _UNSIGNED LONG, IniSectionData$
     SHARED IniCODE, IniAllowBasicComments
     SHARED currentIniFileLOF AS _UNSIGNED LONG
+
     IniLoad file$
     IF IniCODE THEN EXIT SUB
 

@@ -37,8 +37,7 @@ SELECT CASE LCASE$(COMMAND$(2))
         WriteSetting file$, COMMAND$(3), COMMAND$(4), COMMAND$(5)
         PRINT ReadSetting(file$, COMMAND$(3), COMMAND$(4))
     CASE "-delete"
-        IniLoad file$
-        IniDeleteSection COMMAND$(3)
+        IniDeleteSection file$, COMMAND$(3)
     CASE ELSE
         Usage
 END SELECT
