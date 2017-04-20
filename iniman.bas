@@ -21,7 +21,7 @@ DIM file$, a$
 file$ = COMMAND$(1)
 
 SELECT CASE LCASE$(COMMAND$(2))
-    CASE "-read"
+    CASE "-read", "read", "-r", "r"
         IF LEN(COMMAND$(3)) > 0 AND LEN(COMMAND$(4)) > 0 THEN
             PRINT ReadSetting(file$, COMMAND$(3), COMMAND$(4))
         ELSE
@@ -33,14 +33,14 @@ SELECT CASE LCASE$(COMMAND$(2))
                 PRINT IniLastSection$; " "; IniLastKey$; "="; a$
             LOOP
         END IF
-    CASE "-write"
+    CASE "-write", "write", "-w", "w"
         IF LEN(COMMAND$(3)) > 0 AND LEN(COMMAND$(4)) > 0 THEN
             WriteSetting file$, COMMAND$(3), COMMAND$(4), COMMAND$(5)
             PRINT ReadSetting(file$, COMMAND$(3), COMMAND$(4))
         ELSE
             Usage
         END IF
-    CASE "-delete"
+    CASE "-delete", "delete", "-d", "d"
         IF LEN(COMMAND$(3)) > 0 THEN
             IniDeleteSection file$, COMMAND$(3)
         ELSE
@@ -59,9 +59,9 @@ SUB Usage
     PRINT
     PRINT "Usage:"
     PRINT
-    PRINT "    iniman file.ini -read [section [key]]"
-    PRINT "    iniman file.ini -write section key value"
-    PRINT "    iniman file.ini -delete section"
+    PRINT "    iniman file.ini [-read|-r]   [section [key]]"
+    PRINT "                    [-write|-w]  section key value"
+    PRINT "                    [-delete|-d] section"
     PRINT
     PRINT "If a section or key name contains spaces, enclose them in quotation marks."
     SYSTEM
