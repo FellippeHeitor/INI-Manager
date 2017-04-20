@@ -34,10 +34,18 @@ SELECT CASE LCASE$(COMMAND$(2))
             LOOP
         END IF
     CASE "-write"
-        WriteSetting file$, COMMAND$(3), COMMAND$(4), COMMAND$(5)
-        PRINT ReadSetting(file$, COMMAND$(3), COMMAND$(4))
+        IF LEN(COMMAND$(3)) > 0 AND LEN(COMMAND$(4)) > 0 THEN
+            WriteSetting file$, COMMAND$(3), COMMAND$(4), COMMAND$(5)
+            PRINT ReadSetting(file$, COMMAND$(3), COMMAND$(4))
+        ELSE
+            Usage
+        END IF
     CASE "-delete"
-        IniDeleteSection file$, COMMAND$(3)
+        IF LEN(COMMAND$(3)) > 0 THEN
+            IniDeleteSection file$, COMMAND$(3)
+        ELSE
+            Usage
+        END IF
     CASE ELSE
         Usage
 END SELECT
@@ -51,8 +59,11 @@ SUB Usage
     PRINT
     PRINT "Usage:"
     PRINT
-    PRINT "    iniman file.ini <-read | -write> section [[key] [value]]"
+    PRINT "    iniman file.ini -read [section [key]]"
+    PRINT "    iniman file.ini -write section key value"
     PRINT "    iniman file.ini -delete section"
+    PRINT
+    PRINT "If a section or key name contains spaces, enclose them in quotation marks."
     SYSTEM
 END SUB
 

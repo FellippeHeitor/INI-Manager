@@ -371,7 +371,7 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
             endSection = 0
 
             CheckSection:
-            beginSection = INSTR(beginSection + 1, IniWholeFile$, section$)
+            beginSection = INSTR(beginSection + 1, LCASE$(IniWholeFile$), LCASE$(section$))
             IF beginSection = 0 THEN GOTO CreateSection
 
             'identify if this occurrence is actually the section header and not something else
