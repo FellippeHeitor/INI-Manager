@@ -41,7 +41,7 @@ SUB IniDeleteKey (file$, __section$, __key$)
 
     'Read the existing key to fill IniPosition
     tempValue$ = ReadSetting$(file$, section$, key$)
-    IF IniCODE THEN EXIT SUB 'key not found
+    IF IniCODE > 0 AND IniCODE <> 2 THEN EXIT SUB 'key not found
 
     'map IniPosition (set in the section block) to the global file position
     IniPosition = INSTR(IniWholeFile$, IniSectionData$) + IniPosition - 1
@@ -63,10 +63,10 @@ SUB IniMoveKey (file$, __section$, __key$, __newsection$)
     DIM tempValue$
 
     tempValue$ = ReadSetting(file$, __section$, __key$)
-    IF IniCODE THEN EXIT SUB
+    IF IniCODE > 0 AND IniCODE <> 2 THEN EXIT SUB
 
     WriteSetting file$, __newsection$, __key$, tempValue$
-    IF IniCODE > 0 AND IniCODE <> 7 AND IniCODE <> 9 THEN EXIT SUB
+    IF IniCODE > 0 AND IniCODE <> 2 AND IniCODE <> 7 AND IniCODE <> 9 THEN EXIT SUB
 
     IniDeleteKey file$, __section$, __key$
     IF IniCODE = 19 THEN IniCODE = 20
@@ -368,7 +368,7 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
 
     IF IniCODE = 0 OR IniCODE = 2 THEN 'key found and read back; write new value$
         IF LCASE$(IniLastSection$) = LCASE$(section$) THEN
-            IF LTRIM$(RTRIM$(__value$)) = tempValue$ THEN
+            IF LTRIM$(RTRIM$(__value$)) = tempValue$ AND LEN(LTRIM$(RTRIM$(__value$))) > 0 THEN
                 'identical values skip the writing routine
                 IniCODE = 8
                 EXIT SUB
@@ -560,8 +560,9 @@ FUNCTION IniNextKey$
     IniPosition = Equal
 END FUNCTION
 
-FUNCTION IniINFO$ (code)
-    SELECT CASE code
+FUNCTION IniINFO$
+    SHARED IniCODE
+    SELECT CASE IniCODE
         CASE 0: IniINFO$ = "Operation successful"
         CASE 1: IniINFO$ = "File not found"
         CASE 2: IniINFO$ = "Empty value"

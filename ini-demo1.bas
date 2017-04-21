@@ -38,7 +38,7 @@ PRINT "File updated again. Go check it if you will."
 END
 
 Status:
-COLOR 7: PRINT IniINFO(inicode)
+COLOR 7: PRINT IniINFO
 COLOR 15: PRINT IniLastSection$; IniLastKey$: PRINT
 RETURN
 

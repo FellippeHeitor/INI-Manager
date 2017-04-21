@@ -11,7 +11,7 @@ PRINT "Fetch every key/value pair in the file:"
 DO
     a$ = ReadSetting$("test.ini", "", "")
 
-    IF IniCODE = 1 THEN PRINT IniINFO$(IniCODE): END 'IniCODE = 1 -> File not found
+    IF IniCODE = 1 THEN PRINT IniINFO$: END 'IniCODE = 1 -> File not found
     IF IniCODE = 10 THEN EXIT DO 'IniCODE = 10 -> No more keys found
 
     COLOR 7
@@ -35,9 +35,9 @@ PRINT "Fetch only section [contact]:"
 DO
     a$ = ReadSetting$("test.ini", "contact", "")
 
-    IF IniCODE = 1 THEN PRINT IniINFO$(IniCODE): END 'IniCODE = 1 -> File not found
+    IF IniCODE = 1 THEN PRINT IniINFO$: END 'IniCODE = 1 -> File not found
     IF IniCODE = 10 THEN EXIT DO 'IniCODE = 10 -> No more keys found
-    IF IniCODE = 14 THEN PRINT IniINFO$(IniCODE): END 'IniCODE = 14 -> Section not found
+    IF IniCODE = 14 THEN PRINT IniINFO$: END 'IniCODE = 14 -> Section not found
 
     COLOR 7
     PRINT IniLastSection$;

@@ -28,7 +28,7 @@ SELECT CASE LCASE$(COMMAND$(2))
             DO
                 a$ = ReadSetting$(file$, COMMAND$(3), "")
 
-                IF IniCODE > 0 THEN EXIT DO 'IniCODE > 0 --> error/unexpected result
+                IF IniCODE > 0 AND IniCODE <> 2 THEN EXIT DO 'IniCODE > 0 --> error/unexpected result
 
                 PRINT IniLastSection$; " "; IniLastKey$; "="; a$
             LOOP
@@ -58,7 +58,7 @@ SELECT CASE LCASE$(COMMAND$(2))
         Usage
 END SELECT
 
-IF IniCODE > 0 THEN PRINT IniINFO$(IniCODE)
+IF IniCODE > 0 THEN PRINT IniINFO$
 SYSTEM IniCODE
 
 SUB Usage
