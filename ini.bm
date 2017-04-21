@@ -66,7 +66,7 @@ SUB IniMoveKey (file$, __section$, __key$, __newsection$)
     IF IniCODE THEN EXIT SUB
 
     WriteSetting file$, __newsection$, __key$, tempValue$
-    IF IniCODE > 0 AND IniCODE <> 7 THEN EXIT SUB
+    IF IniCODE > 0 AND IniCODE <> 7 AND IniCODE <> 9 THEN EXIT SUB
 
     IniDeleteKey file$, __section$, __key$
     IF IniCODE = 19 THEN IniCODE = 20
