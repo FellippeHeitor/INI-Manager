@@ -22,11 +22,11 @@ file$ = COMMAND$(1)
 
 SELECT CASE LCASE$(COMMAND$(2))
     CASE "", "-read", "read", "-r", "r"
-        IF _COMMANDCOUNT >= 4 THEN
+        IF _COMMANDCOUNT = 4 THEN
             PRINT ReadSetting(file$, COMMAND$(3), COMMAND$(4))
         ELSE
             DO
-                a$ = ReadSetting$(file$, COMMAND$(3), COMMAND$(4))
+                a$ = ReadSetting$(file$, COMMAND$(3), "")
 
                 IF IniCODE > 0 THEN EXIT DO 'IniCODE > 0 --> error/unexpected result
 
@@ -34,7 +34,7 @@ SELECT CASE LCASE$(COMMAND$(2))
             LOOP
         END IF
     CASE "-write", "write", "-w", "w"
-        IF _COMMANDCOUNT >= 5 THEN
+        IF _COMMANDCOUNT >= 4 THEN
             WriteSetting file$, COMMAND$(3), COMMAND$(4), COMMAND$(5)
             PRINT ReadSetting(file$, COMMAND$(3), COMMAND$(4))
         ELSE
@@ -43,6 +43,14 @@ SELECT CASE LCASE$(COMMAND$(2))
     CASE "-delete", "delete", "-d", "d"
         IF _COMMANDCOUNT = 3 THEN
             IniDeleteSection file$, COMMAND$(3)
+        ELSEIF _COMMANDCOUNT = 4 THEN
+            IniDeleteKey file$, COMMAND$(3), COMMAND$(4)
+        ELSE
+            Usage
+        END IF
+    CASE "-move", "move", "-m", "m"
+        IF _COMMANDCOUNT = 5 THEN
+            IniMoveKey file$, COMMAND$(3), COMMAND$(4), COMMAND$(5)
         ELSE
             Usage
         END IF
@@ -61,6 +69,7 @@ SUB Usage
     PRINT
     PRINT "    iniman file.ini -read|-r    [section [key]]"
     PRINT "                    -write|-w   section key value"
+    PRINT "                    -move|-m    section key newsection"
     PRINT "                    -delete|-d  section [key]"
     PRINT
     PRINT "If a section or key name contains spaces, enclose them in quotation marks."

@@ -20,6 +20,58 @@ SUB IniDeleteSection (file$, __section$)
     IniCODE = 13
 END SUB
 
+SUB IniDeleteKey (file$, __section$, __key$)
+    SHARED IniPosition AS _UNSIGNED LONG, IniCODE
+    SHARED IniLF$, IniWholeFile$, IniSectionData$
+    SHARED IniLastSection$, IniLastKey$, IniNewFile$
+
+    DIM tempValue$, fileNum AS INTEGER
+    DIM section$, key$, thisLine$
+    DIM FoundLF AS _UNSIGNED LONG
+
+    IniCODE = 0
+
+    'prepare variables for the write operation
+    section$ = IniFormatSection$(__section$)
+    IF IniCODE THEN EXIT SUB
+
+    key$ = LTRIM$(RTRIM$(__key$))
+    IF key$ = "" THEN IniCODE = 12: EXIT SUB
+    IniLastKey$ = key$
+
+    'Read the existing key to fill IniPosition
+    tempValue$ = ReadSetting$(file$, section$, key$)
+    IF IniCODE THEN EXIT SUB 'key not found
+
+    'map IniPosition (set in the section block) to the global file position
+    IniPosition = INSTR(IniWholeFile$, IniSectionData$) + IniPosition - 1
+
+    FoundLF = INSTR(IniPosition, IniWholeFile$, IniLF$)
+    IF FoundLF = 0 THEN FoundLF = LEN(IniWholeFile$)
+
+    IniNewFile$ = LEFT$(IniWholeFile$, IniPosition - 1) + MID$(IniWholeFile$, FoundLF + LEN(IniLF$))
+
+    IniCommit
+    IniCODE = 19
+END SUB
+
+SUB IniMoveKey (file$, __section$, __key$, __newsection$)
+    'A move operation is a copy operation + a delete operation
+
+    SHARED IniCODE
+
+    DIM tempValue$
+
+    tempValue$ = ReadSetting(file$, __section$, __key$)
+    IF IniCODE THEN EXIT SUB
+
+    WriteSetting file$, __newsection$, __key$, tempValue$
+    IF IniCODE > 0 AND IniCODE <> 7 THEN EXIT SUB
+
+    IniDeleteKey file$, __section$, __key$
+    IF IniCODE = 19 THEN IniCODE = 20
+END SUB
+
 SUB IniCommit
     SHARED currentIniFileName$, IniWholeFile$, currentIniFileLOF AS _UNSIGNED LONG
     SHARED IniNewFile$, IniDisableAutoCommit, IniCODE
@@ -142,7 +194,7 @@ FUNCTION ReadSetting$ (file$, __section$, __key$)
 
     'fetch the desired section$
     IniSectionData$ = IniGetSection(section$)
-    IF IniCODE > 0 THEN EXIT SUB
+    IF IniCODE > 0 AND IniCODE <> 17 THEN EXIT SUB
 
     IF LEN(IniSectionData$) = 0 AND section$ <> "[]" THEN IniCODE = 14: EXIT SUB
 
@@ -155,7 +207,7 @@ FUNCTION ReadSetting$ (file$, __section$, __key$)
     IF key$ = "" THEN
         IF section$ = "[]" THEN IniSectionData$ = IniWholeFile$
         key$ = IniNextKey
-        IF IniCODE > 0 THEN EXIT SUB
+        IF IniCODE THEN EXIT SUB
         IF key$ = "" THEN
             IniCODE = 10
             EXIT SUB
@@ -265,18 +317,17 @@ FUNCTION IniCurrentSection$
 END FUNCTION
 
 SUB WriteSetting (file$, __section$, __key$, __value$)
-    SHARED IniPosition AS _UNSIGNED LONG, IniCODE
+    SHARED IniPosition AS _UNSIGNED LONG, IniCODE, currentIniFileName$
     SHARED IniLF$, IniWholeFile$, IniSectionData$
     SHARED IniLastSection$, IniLastKey$, IniNewFile$
 
-    DIM tempValue$, fileNum AS INTEGER
-    DIM section$, key$, value$, thisLine$
+    DIM tempValue$, section$, key$, value$, thisLine$
 
     IniCODE = 0
 
     'prepare variables for the write operation
     section$ = IniFormatSection$(__section$)
-    IF IniCODE > 0 THEN EXIT SUB
+    IF IniCODE THEN EXIT SUB
 
     key$ = LTRIM$(RTRIM$(__key$))
     IF key$ = "" THEN IniCODE = 12: EXIT SUB
@@ -294,22 +345,24 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
     'map IniPosition (set in the section block) to the global file position
     IniPosition = INSTR(IniWholeFile$, IniSectionData$) + IniPosition - 1
 
-    IF IniCODE = 1 THEN
-        'file not found; create it and exit
-        fileNum = FREEFILE
-        OPEN file$ FOR OUTPUT AS #fileNum
+    IF IniCODE = 1 OR IniCODE = 17 THEN
+        'file not found or empty; create a new one
+        IF file$ = "" THEN file$ = currentIniFileName$
+        IF file$ = "" THEN IniCODE = 21: EXIT SUB
+
+        currentIniFileName$ = file$
+
         IF section$ <> "[]" THEN
-            PRINT #fileNum, section$
+            IniNewFile$ = section$ + IniLF$
         END IF
 
-        PRINT #fileNum, key$ + "=" + value$;
-        CLOSE #fileNum
+        IniNewFile$ = IniNewFile$ + key$ + "=" + value$
 
+        IniCODE = 0
+        IniCommit
         IniLoad file$
-        IF IniCODE = 0 THEN
-            IniCODE = 11
-            IniLastSection$ = section$
-        END IF
+        IF IniCODE = 0 THEN IniCODE = 11
+        IniLastSection$ = section$
         EXIT SUB
     END IF
 
@@ -455,6 +508,7 @@ SUB IniLoad (file$)
         ELSE
             IniFileNotFound:
             IniCODE = 1
+
             $IF WIN THEN
                 IniLF$ = CHR$(13) + CHR$(10)
             $ELSE
@@ -527,6 +581,9 @@ FUNCTION IniINFO$ (code)
         CASE 16: IniINFO$ = "New section created; existing key moved"
         CASE 17: IniINFO$ = "Empty file"
         CASE 18: IniINFO$ = "No file open"
+        CASE 19: IniINFO$ = "Key deleted"
+        CASE 20: IniINFO$ = "Key moved"
+        CASE 21: IniINFO$ = "Invalid file name/path"
         CASE ELSE: IniINFO$ = "<invalid error code>"
     END SELECT
 END FUNCTION
