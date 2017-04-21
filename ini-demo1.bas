@@ -7,7 +7,7 @@
 '----------------------------------------------------------------
 
 '(brackets in section names are optional; will be added automatically anyway)
-WriteSetting "test.ini", "[general]", "version", "Beta 2"
+WriteSetting "test.ini", "[general]", "version", "Beta 3"
 GOSUB Status
 
 'subsequent calls don't need to mention the file again
@@ -31,7 +31,7 @@ PRINT "Hit any key to continue..."
 PRINT
 a$ = INPUT$(1)
 
-WriteSetting "", "general", "version", "Beta 2 - check the repo"
+WriteSetting "", "general", "version", "Beta 3 - check the repo"
 GOSUB Status
 
 PRINT "File updated again. Go check it if you will."

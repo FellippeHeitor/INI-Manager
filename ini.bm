@@ -1,4 +1,4 @@
-'INI Manager
+'INI Manager - Beta 3
 'Fellippe Heitor, 2017 - fellippe@qb64.org - @fellippeheitor
 
 SUB IniDeleteSection (file$, __section$)
