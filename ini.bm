@@ -143,20 +143,17 @@ FUNCTION ReadSetting$ (file$, __section$, __key$)
     'fetch the desired section$
     IniSectionData$ = IniGetSection(section$)
     IF IniCODE > 0 THEN EXIT SUB
+
     IF LEN(IniSectionData$) = 0 AND section$ <> "[]" THEN IniCODE = 14: EXIT SUB
 
     IniLastSection$ = section$
-
-    IF section$ = "[]" THEN
-        section$ = ""
-    END IF
 
     IniPosition = 0
 
     key$ = LTRIM$(RTRIM$(__key$))
     IniLastKey$ = ""
     IF key$ = "" THEN
-        IF section$ = "" THEN IniSectionData$ = IniWholeFile$
+        IF section$ = "[]" THEN IniSectionData$ = IniWholeFile$
         key$ = IniNextKey
         IF IniCODE > 0 THEN EXIT SUB
         IF key$ = "" THEN
@@ -280,7 +277,6 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
     'prepare variables for the write operation
     section$ = IniFormatSection$(__section$)
     IF IniCODE > 0 THEN EXIT SUB
-    IF section$ = "[]" THEN section$ = ""
 
     key$ = LTRIM$(RTRIM$(__key$))
     IF key$ = "" THEN IniCODE = 12: EXIT SUB
@@ -302,7 +298,7 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
         'file not found; create it and exit
         fileNum = FREEFILE
         OPEN file$ FOR OUTPUT AS #fileNum
-        IF LEN(section$) > 0 THEN
+        IF section$ <> "[]" THEN
             PRINT #fileNum, section$
         END IF
 
@@ -312,16 +308,13 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
         IniLoad file$
         IF IniCODE = 0 THEN
             IniCODE = 11
-            IF LEN(section$) > 0 THEN IniLastSection$ = section$
+            IniLastSection$ = section$
         END IF
         EXIT SUB
     END IF
 
     IF IniCODE = 0 OR IniCODE = 2 THEN 'key found and read back; write new value$
         IF LCASE$(IniLastSection$) = LCASE$(section$) THEN
-
-            IniLastSection$ = section$
-
             IF LTRIM$(RTRIM$(__value$)) = tempValue$ THEN
                 'identical values skip the writing routine
                 IniCODE = 8
@@ -342,26 +335,10 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
             IniCommit
 
             IniCODE = 4
-        ELSEIF LEN(section$) > 0 THEN
-            'Rewrite this key into a new section$
-            nextLine = INSTR(IniPosition, IniWholeFile$, IniLF$)
-
-            IniNewFile$ = LEFT$(IniWholeFile$, IniPosition - 1)
-
-            IF nextLine > 0 THEN
-                IniNewFile$ = IniNewFile$ + MID$(IniWholeFile$, nextLine + LEN(IniLF$))
-            END IF
-
-            IniCODE = 6
-
-            GOTO CreateKey
-        ELSE
-            GOTO WriteAtTop
         END IF
     ELSEIF IniCODE = 3 OR IniCODE = 14 THEN 'Key not found, Section not found
         IniCODE = 0
-        CreateKey:
-        IF LEN(section$) > 0 THEN 'if a section$ is passed, it'll be by now enclosed in []
+        IF LCASE$(IniLastSection$) = LCASE$(section$) THEN
             'find this section$ in the current ini file;
             DIM Bracket1 AS _UNSIGNED LONG, Bracket2 AS _UNSIGNED LONG, foundSection$
             DIM beginSection AS _UNSIGNED LONG, endSection AS _UNSIGNED LONG
@@ -416,7 +393,7 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
         ELSE
             CreateSection:
             IniNewFile$ = IniWholeFile$
-            IF LEN(section$) = 0 THEN GOTO WriteAtTop
+            IF section$ = "[]" THEN GOTO WriteAtTop
 
             IF RIGHT$(IniNewFile$, 4) = IniLF$ + IniLF$ THEN
                 IniNewFile$ = IniNewFile$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
