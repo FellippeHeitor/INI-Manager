@@ -491,6 +491,11 @@ FUNCTION IniNextKey$
 
     tempKey$ = LTRIM$(RTRIM$(MID$(IniSectionData$ + tempLF$, position + 1, Equal - position - 1)))
 
+    DO WHILE LEFT$(tempKey$, LEN(IniLF$)) = IniLF$
+        tempKey$ = MID$(tempKey$, LEN(IniLF$) + 1)
+        position = position + LEN(IniLF$)
+    LOOP
+
     position = INSTR(position, IniSectionData$ + tempLF$, IniLF$) + 1
 
     IF LEFT$(tempKey$, 1) = ";" OR LEFT$(tempKey$, 1) = "'" OR INSTR(tempKey$, "[") > 0 OR INSTR(tempKey$, "]") > 0 OR INSTR(tempKey$, "=") > 0 THEN
