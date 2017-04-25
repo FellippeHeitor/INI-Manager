@@ -48,8 +48,8 @@ SUB IniSortSection (file$, __section$)
         END IF
     NEXT
 
-    IniDisableAutoCommit = 0 'Reactivate writing to disk and
-    IniCommit '               commit changes.
+    IniDisableAutoCommit = CommitBackup 'Restore writing to disk (or previously set state) and
+    IniCommit '                          commit changes.
 
     IniCODE = 22
 END SUB
@@ -617,31 +617,53 @@ FUNCTION IniNextKey$
     IniPosition = Equal
 END FUNCTION
 
-SUB IniGetSections (file$, sectionsList() AS STRING)
-    SHARED IniCODE, IniLastSection$, currentIniFileName$
-    DIM a$, lastSection$, totalSections AS LONG, sections$, i AS LONG
+FUNCTION IniNextSection$ (file$)
+    SHARED IniCODE, IniLF$, IniWholeFile$
 
-    DO
-        a$ = ReadSetting$(file$, "", "")
-        IF LEFT$(IniINFO$, 6) = "ERROR:" THEN EXIT SUB
-        IF IniCODE = 10 THEN EXIT DO
-        IF IniLastSection$ <> lastSection$ THEN
-            lastSection$ = IniLastSection$
-            sections$ = sections$ + lastSection$
-            totalSections = totalSections + 1
+    STATIC sectionStart AS _UNSIGNED LONG
+
+    IniLoad file$
+    IF LEFT$(IniINFO$, 6) = "ERROR:" THEN EXIT SUB
+
+    IniCODE = 0
+
+    DIM section$, foundSection AS _UNSIGNED LONG, endSection AS _UNSIGNED LONG
+    DIM i AS _UNSIGNED LONG, Bracket1 AS _UNSIGNED LONG, Bracket2 AS _UNSIGNED LONG
+
+    FindNext:
+    sectionStart = INSTR(sectionStart + 1, IniWholeFile$, "[")
+    IF sectionStart = 0 THEN IniCODE = 24: EXIT FUNCTION
+
+    'make sure it's a valid section header
+    foundSection = 0
+    FOR i = sectionStart - 1 TO 1 STEP -1
+        IF ASC(IniWholeFile$, i) = 10 THEN foundSection = i + 1: EXIT FOR
+        IF ASC(IniWholeFile$, i) <> 32 THEN GOTO FindNext
+    NEXT
+
+    IF i = 0 THEN foundSection = 1
+
+    IF foundSection > 0 THEN
+        'we found it; time to identify where this section ends
+        '(either another [section] or the end of the file
+        Bracket2 = INSTR(sectionStart + 1, IniWholeFile$, "]")
+        IF Bracket2 = 0 THEN IniCODE = 24: EXIT FUNCTION
+        Bracket1 = INSTR(sectionStart + 1, IniWholeFile$, "[")
+        IF Bracket1 > 0 THEN
+            FOR i = Bracket1 - 1 TO 1 STEP -1
+                IF ASC(IniWholeFile$, i) = 10 THEN endSection = i + 1 - LEN(IniLF$): EXIT FOR
+                IF i <= foundSection THEN EXIT FOR
+            NEXT
+            IniNextSection$ = MID$(IniWholeFile$, foundSection, Bracket2 - foundSection + 1)
+        ELSE
+            IniNextSection$ = MID$(IniWholeFile$, foundSection, Bracket2 - foundSection + 1)
+            IniCODE = 24
+            sectionStart = 0
         END IF
-    LOOP
-
-    IF totalSections > 0 THEN
-        REDIM sectionsList(1 TO totalSections) AS STRING
-        FOR i = 1 TO totalSections
-            sectionsList(i) = LEFT$(sections$, INSTR(sections$, "]"))
-            sections$ = MID$(sections$, INSTR(sections$, "]") + 1)
-        NEXT
     ELSE
-        REDIM sectionsList(0) AS STRING
+        IniCODE = 24
     END IF
-END SUB
+END FUNCTION
 
 FUNCTION IniINFO$
     SHARED IniCODE
@@ -669,6 +691,7 @@ FUNCTION IniINFO$
         CASE 21: IniINFO$ = "ERROR: Invalid file name/path"
         CASE 22: IniINFO$ = "Section sorted"
         CASE 23: IniINFO$ = "No changes applied; section already sorted"
+        CASE 24: IniINFO$ = "No more sections"
         CASE ELSE: IniINFO$ = "ERROR: <invalid error code>"
     END SELECT
 END FUNCTION

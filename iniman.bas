@@ -63,15 +63,10 @@ SELECT CASE LCASE$(COMMAND$(2))
         END IF
     CASE "-sections", "sections", "-se", "se"
         IF _COMMANDCOUNT = 2 THEN
-            REDIM list$(0)
-            IniGetSections file$, list$()
-            IF LEFT$(IniINFO$, 6) <> "ERROR:" THEN
-                DIM i
-                FOR i = 1 TO UBOUND(list$)
-                    PRINT i, list$(i)
-                NEXT
-                IniCODE = 0
-            END IF
+            DO
+                PRINT IniNextSection$(file$)
+                IF IniCODE = 24 THEN EXIT DO
+            LOOP
         ELSE
             Usage
         END IF
