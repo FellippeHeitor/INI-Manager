@@ -1,5 +1,58 @@
-'INI Manager - Beta 3
+'INI Manager - Beta 4
 'Fellippe Heitor, 2017 - fellippe@qb64.org - @fellippeheitor
+
+SUB IniSortSection (file$, __section$)
+    SHARED IniCODE, IniLastKey$, IniWholeFile$
+    SHARED IniDisableAutoCommit
+
+    REDIM Keys(1 TO 100) AS STRING
+    DIM TotalKeys, tempValue$, i AS LONG, Backup$, CommitBackup
+
+    IF IniFormatSection$(__section$) = "[]" THEN IniCODE = 15: EXIT SUB
+
+    DO
+        tempValue$ = ReadSetting(file$, __section$, "")
+        IF LEFT$(IniINFO$, 7) = "ERROR: " THEN EXIT SUB
+        IF IniCODE = 10 THEN EXIT DO
+
+        TotalKeys = TotalKeys + 1
+        IF TotalKeys > UBOUND(Keys) THEN
+            REDIM _PRESERVE Keys(1 TO UBOUND(Keys) + 100) AS STRING
+        END IF
+
+        Keys(TotalKeys) = IniLastKey$ + "=" + tempValue$
+    LOOP
+
+    REDIM _PRESERVE Keys(1 TO TotalKeys) AS STRING
+    IF IniArraySort(Keys()) = 0 THEN IniCODE = 23: EXIT SUB
+
+    CommitBackup = IniDisableAutoCommit
+    IniDisableAutoCommit = -1 'Prevent every minor change from being written to disk
+    Backup$ = IniWholeFile$
+
+    FOR i = 1 TO TotalKeys
+        IniDeleteKey file$, __section$, LEFT$(Keys(i), INSTR(Keys(i), "=") - 1)
+        IF LEFT$(IniINFO$, 7) = "ERROR: " THEN
+            IniDisableAutoCommit = CommitBackup
+            IniWholeFile$ = Backup$
+            EXIT SUB
+        END IF
+    NEXT
+
+    FOR i = 1 TO TotalKeys
+        WriteSetting file$, __section$, LEFT$(Keys(i), INSTR(Keys(i), "=") - 1), MID$(Keys(i), INSTR(Keys(i), "=") + 1)
+        IF LEFT$(IniINFO$, 7) = "ERROR: " THEN
+            IniDisableAutoCommit = CommitBackup
+            IniWholeFile$ = Backup$
+            EXIT SUB
+        END IF
+    NEXT
+
+    IniDisableAutoCommit = 0 'Reactivate writing to disk and
+    IniCommit '               commit changes.
+
+    IniCODE = 22
+END SUB
 
 SUB IniDeleteSection (file$, __section$)
     SHARED IniNewFile$, IniCODE, currentIniFileName$
@@ -78,20 +131,24 @@ SUB IniCommit
 
     IF currentIniFileName$ = "" THEN IniCODE = 18: EXIT SUB
 
-    DIM fileNum AS INTEGER
-    fileNum = FREEFILE
+    IniWholeFile$ = IniNewFile$
+    currentIniFileLOF = LEN(IniNewFile$)
 
     IF NOT IniDisableAutoCommit THEN
-        IF LEN(IniNewFile$) < currentIniFileLOF THEN
-            OPEN currentIniFileName$ FOR OUTPUT AS #fileNum: CLOSE #fileNum
-        END IF
+        DIM fileNum AS INTEGER
+        fileNum = FREEFILE
+
         OPEN currentIniFileName$ FOR BINARY AS #fileNum
-        PUT #1, 1, IniNewFile$
+
+        IF LEN(IniWholeFile$) < LOF(fileNum) THEN
+            CLOSE fileNum
+            OPEN currentIniFileName$ FOR OUTPUT AS #fileNum: CLOSE #fileNum
+            OPEN currentIniFileName$ FOR BINARY AS #fileNum
+        END IF
+
+        PUT #fileNum, 1, IniNewFile$
         CLOSE #fileNum
     END IF
-
-    IniWholeFile$ = IniNewFile$
-    currentIniFileLOF = LEN(IniWholeFile$)
 END SUB
 
 FUNCTION IniGetSection$ (__section$)
@@ -560,31 +617,81 @@ FUNCTION IniNextKey$
     IniPosition = Equal
 END FUNCTION
 
+SUB IniGetSections (file$, sectionsList() AS STRING)
+    SHARED IniCODE, IniLastSection$, currentIniFileName$
+    DIM a$, lastSection$, totalSections AS LONG, sections$, i AS LONG
+
+    DO
+        a$ = ReadSetting$(file$, "", "")
+        IF LEFT$(IniINFO$, 6) = "ERROR:" THEN EXIT SUB
+        IF IniCODE = 10 THEN EXIT DO
+        IF IniLastSection$ <> lastSection$ THEN
+            lastSection$ = IniLastSection$
+            sections$ = sections$ + lastSection$
+            totalSections = totalSections + 1
+        END IF
+    LOOP
+
+    IF totalSections > 0 THEN
+        REDIM sectionsList(1 TO totalSections) AS STRING
+        FOR i = 1 TO totalSections
+            sectionsList(i) = LEFT$(sections$, INSTR(sections$, "]"))
+            sections$ = MID$(sections$, INSTR(sections$, "]") + 1)
+        NEXT
+    ELSE
+        REDIM sectionsList(0) AS STRING
+    END IF
+END SUB
+
 FUNCTION IniINFO$
     SHARED IniCODE
     SELECT CASE IniCODE
         CASE 0: IniINFO$ = "Operation successful"
-        CASE 1: IniINFO$ = "File not found"
+        CASE 1: IniINFO$ = "ERROR: File not found"
         CASE 2: IniINFO$ = "Empty value"
-        CASE 3: IniINFO$ = "Key not found"
+        CASE 3: IniINFO$ = "ERROR: Key not found"
         CASE 4: IniINFO$ = "Key updated"
         CASE 5: IniINFO$ = "Global key created"
-        CASE 6: IniINFO$ = "Key updated and moved to new section"
         CASE 7: IniINFO$ = "Key created in existing section"
         CASE 8: IniINFO$ = "No changes applied (same value)"
         CASE 9: IniINFO$ = "New section created; key created"
         CASE 10: IniINFO$ = "No more keys"
         CASE 11: IniINFO$ = "File created; new key added"
-        CASE 12: IniINFO$ = "Invalid key"
+        CASE 12: IniINFO$ = "ERROR: Invalid key"
         CASE 13: IniINFO$ = "Section deleted"
-        CASE 14: IniINFO$ = "Section not found"
-        CASE 15: IniINFO$ = "Invalid section"
+        CASE 14: IniINFO$ = "ERROR: Section not found"
+        CASE 15: IniINFO$ = "ERROR: Invalid section"
         CASE 16: IniINFO$ = "New section created; existing key moved"
-        CASE 17: IniINFO$ = "Empty file"
-        CASE 18: IniINFO$ = "No file open"
+        CASE 17: IniINFO$ = "ERROR: Empty file"
+        CASE 18: IniINFO$ = "ERROR: No file open"
         CASE 19: IniINFO$ = "Key deleted"
         CASE 20: IniINFO$ = "Key moved"
-        CASE 21: IniINFO$ = "Invalid file name/path"
-        CASE ELSE: IniINFO$ = "<invalid error code>"
+        CASE 21: IniINFO$ = "ERROR: Invalid file name/path"
+        CASE 22: IniINFO$ = "Section sorted"
+        CASE 23: IniINFO$ = "No changes applied; section already sorted"
+        CASE ELSE: IniINFO$ = "ERROR: <invalid error code>"
     END SELECT
 END FUNCTION
+
+'Written in BASIC by Luke Ceddia for ide_methods.bas (QB64)
+'After Cormen, Leiserson, Rivest & Stein "Introduction To Algoritms" via Wikipedia
+'Adapted for use in .INI Manager
+FUNCTION IniArraySort%% (arr() AS STRING)
+    DIM i&, x$, j&, moves&
+
+    FOR i& = LBOUND(arr) + 1 TO UBOUND(arr)
+        x$ = arr(i&)
+        j& = i& - 1
+        WHILE j& >= LBOUND(arr)
+            IF arr(j&) <= x$ THEN EXIT WHILE
+            moves& = moves& + 1
+            arr$(j& + 1) = arr$(j&)
+            j& = j& - 1
+        WEND
+        arr$(j& + 1) = x$
+    NEXT i&
+
+    'Returns -1 (true) if any changes were made
+    IniArraySort%% = moves& > 0
+END FUNCTION
+

@@ -28,7 +28,8 @@ SELECT CASE LCASE$(COMMAND$(2))
             DO
                 a$ = ReadSetting$(file$, COMMAND$(3), "")
 
-                IF IniCODE > 0 AND IniCODE <> 2 THEN EXIT DO 'IniCODE > 0 --> error/unexpected result
+                IF LEFT$(IniINFO$, 6) = "ERROR:" THEN EXIT DO
+                IF IniCODE = 10 THEN EXIT DO 'No more keys
 
                 PRINT IniLastSection$; " "; IniLastKey$; "="; a$
             LOOP
@@ -48,9 +49,29 @@ SELECT CASE LCASE$(COMMAND$(2))
         ELSE
             Usage
         END IF
+    CASE "-sort", "sort", "-s", "s"
+        IF _COMMANDCOUNT = 3 THEN
+            IniSortSection file$, COMMAND$(3)
+        ELSE
+            Usage
+        END IF
     CASE "-move", "move", "-m", "m"
         IF _COMMANDCOUNT = 5 THEN
             IniMoveKey file$, COMMAND$(3), COMMAND$(4), COMMAND$(5)
+        ELSE
+            Usage
+        END IF
+    CASE "-sections", "sections", "-se", "se"
+        IF _COMMANDCOUNT = 2 THEN
+            REDIM list$(0)
+            IniGetSections file$, list$()
+            IF LEFT$(IniINFO$, 6) <> "ERROR:" THEN
+                DIM i
+                FOR i = 1 TO UBOUND(list$)
+                    PRINT i, list$(i)
+                NEXT
+                IniCODE = 0
+            END IF
         ELSE
             Usage
         END IF
@@ -67,12 +88,14 @@ SUB Usage
     PRINT
     PRINT "Usage:"
     PRINT
-    PRINT "    iniman file.ini -read|-r    [section [key]]"
-    PRINT "                    -write|-w   section key value"
-    PRINT "                    -move|-m    section key newsection"
-    PRINT "                    -delete|-d  section [key]"
+    PRINT "    iniman file.ini -read      [section [key]]"
+    PRINT "                    -write     section key value"
+    PRINT "                    -move      source_section key destination_section"
+    PRINT "                    -delete    section [key]"
+    PRINT "                    -sort      section"
+    PRINT "                    -sections"
     PRINT
-    PRINT "If a section or key name contains spaces, enclose them in quotation marks."
+    PRINT "If a section or key name contains spaces, enclose it in quotation marks."
     SYSTEM
 END SUB
 
