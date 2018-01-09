@@ -23,6 +23,8 @@ More info at https://en.wikipedia.org/wiki/INI_file
 
 ## Library methods
 
+### Writing
+
         WriteSetting file$, section$, key$, value$
 
 Writes a new setting to a file or updates an existing one.
@@ -31,6 +33,8 @@ Writes a new setting to a file or updates an existing one.
 * section$ = the [section] in the ini file where the new key$ will be added.
 * key$ = the unique identifier of the value you wish to store (multiple identical keys can exist across different sections).
 * value$ = the value to be stored. Numeric values must be converted to strings with STR$() first.
+
+### Reading
 
         result$ = ReadSetting$(file$, section$, key$)
 
@@ -43,6 +47,28 @@ Reads settings from a file.
 
 By passing an empty section$ and an empty key$ ("") you can fetch all keys in the file sequentially. To fetch all keys in a given section, leave only the key$ parameter empty.
 
-        IniDeleteSection "section"
+### Deleting
+
+        IniDeleteSection file$, section$
 
 Deletes a whole section from a file.
+
+        IniDeleteKey file$, section$, key$
+
+Deletes a key from the specified section in a file.
+
+### Other methods
+
+		IniSortSection file$, section$
+		
+Sorts keys alphabetically in the specified section.
+
+		IniMoveKey file$, section$, key$, newSection$
+		
+Moves key$ from section$ to newSection$.
+
+		result$ = IniINFO$
+
+Returns the description of the IniCODE from the last operation. After a read or write operation, IniCODE will be 0 if operation successful. When not 0, IniINFO$ returns a human-readable description of the error.
+
+Check the sample programs provided for more usage examples.
