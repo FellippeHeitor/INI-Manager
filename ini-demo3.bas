@@ -39,7 +39,7 @@ DO
             a$ = ReadSetting$(file$, section$, "")
 
             IF IniCODE = 1 OR IniCODE = 17 THEN PRINT IniINFO$: EXIT DO 'IniCODE = 1 -> File not found, 17 = empty file
-            IF IniCODE = 10 THEN EXIT DO 'IniCODE = 10 -> No more keys found
+            IF IniCODE = 14 OR IniCODE = 10 THEN PRINT IniINFO$: EXIT DO 'IniCODE = 10 -> No more keys found
 
             COLOR 7
             PRINT IniLastSection$;
