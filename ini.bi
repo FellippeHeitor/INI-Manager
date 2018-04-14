@@ -17,4 +17,5 @@ DIM IniLF$
 DIM IniDisableAutoCommit
 DIM IniCODE
 DIM IniAllowBasicComments
+DIM IniForceReload
 

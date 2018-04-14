@@ -531,9 +531,19 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
     END IF
 END SUB
 
+SUB IniSetForceReload (state AS _BYTE)
+    SHARED IniForceReload
+    IF state THEN
+        IniForceReload = -1
+    ELSE
+        IniForceReload = 0
+    END IF
+END SUB
+
 SUB IniLoad (file$)
     SHARED IniCODE, currentIniFileName$, IniLF$, IniWholeFile$
     SHARED currentIniFileLOF AS _UNSIGNED LONG
+    SHARED IniForceReload
 
     DIM fileNum AS INTEGER
 
@@ -542,6 +552,11 @@ SUB IniLoad (file$)
     IniCODE = 0
 
     IF file$ <> "" AND currentIniFileName$ <> file$ THEN currentIniFileName$ = ""
+
+    IF IniForceReload AND LEN(currentIniFileName$) > 0 THEN
+        file$ = currentIniFileName$
+        currentIniFileName$ = ""
+    END IF
 
     'Passing an empty file$ is allowed if user already
     'passed a valid file in this session.
