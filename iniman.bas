@@ -32,6 +32,7 @@ SELECT CASE LCASE$(COMMAND$(2))
             LOOP
         END IF
     CASE "-write", "write", "-w", "w"
+        IF LCASE$(RIGHT$(file$, 4)) <> ".ini" THEN file$ = file$ + ".ini"
         IF _COMMANDCOUNT >= 4 THEN
             WriteSetting file$, COMMAND$(3), COMMAND$(4), COMMAND$(5)
             PRINT ReadSetting(file$, COMMAND$(3), COMMAND$(4))
@@ -100,9 +101,14 @@ SUB Usage
 END SUB
 
 SUB checkFile
-    IF NOT _FILEEXISTS(COMMAND$(1)) THEN
-        PRINT "File not found."
-        SYSTEM
+    SHARED file$
+    IF NOT _FILEEXISTS(file$) THEN
+        IF NOT _FILEEXISTS(file$ + ".ini") THEN
+            PRINT "File not found."
+            SYSTEM
+        ELSE
+            file$ = file$ + ".ini"
+        END IF
     END IF
 END SUB
 
