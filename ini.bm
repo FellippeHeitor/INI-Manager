@@ -540,6 +540,15 @@ SUB IniSetForceReload (state AS _BYTE)
     END IF
 END SUB
 
+SUB IniClose
+    SHARED IniDisableAutoCommit
+
+    IniDisableAutoCommit = False
+    IniCommit
+
+    currentIniFileName$ = ""
+END SUB
+
 SUB IniLoad (file$)
     SHARED IniCODE, currentIniFileName$, IniLF$, IniWholeFile$
     SHARED currentIniFileLOF AS _UNSIGNED LONG
@@ -548,7 +557,7 @@ SUB IniLoad (file$)
     DIM fileNum AS INTEGER
 
     'Error messages are returned with IniCODE
-    'Error descriptions can be fetched with function IniINFO$(IniCODE)
+    'Error descriptions can be fetched with function IniINFO$
     IniCODE = 0
 
     IF file$ <> "" AND currentIniFileName$ <> file$ THEN currentIniFileName$ = ""
