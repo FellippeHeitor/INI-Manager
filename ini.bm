@@ -541,9 +541,9 @@ SUB IniSetForceReload (state AS _BYTE)
 END SUB
 
 SUB IniClose
-    SHARED IniDisableAutoCommit
+    SHARED IniDisableAutoCommit, currentIniFileName$
 
-    IniDisableAutoCommit = False
+    IniDisableAutoCommit = 0
     IniCommit
 
     currentIniFileName$ = ""
