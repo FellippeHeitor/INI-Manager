@@ -1,5 +1,5 @@
 'iniman - command line utility to edit/view .ini files
-'based on INI Manager - Fellippe Heitor, 2017
+'based on INI Manager - Fellippe Heitor, 2017-2019
 'fellippe@qb64.org - @FellippeHeitor
 OPTION _EXPLICIT
 
@@ -85,7 +85,7 @@ SYSTEM IniCODE
 
 SUB Usage
     PRINT "iniman - INI manager"
-    PRINT "by Fellippe Heitor, 2017"
+    PRINT "by Fellippe Heitor, 2017-2019"
     PRINT
     PRINT "Usage:"
     PRINT

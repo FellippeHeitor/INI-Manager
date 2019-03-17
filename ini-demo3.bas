@@ -10,7 +10,7 @@
 '    key2=
 '
 'To know what exactly happened, read the global variable IniCODE.
-'For a description of the status code, call IniINFO$(IniCODE)
+'For a description of the status code, call IniINFO$
 '----------------------------------------------------------------
 
 file$ = "test.ini"
