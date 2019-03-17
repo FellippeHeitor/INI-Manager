@@ -638,6 +638,8 @@ FUNCTION IniNextKey$
 
     tempKey$ = LTRIM$(RTRIM$(MID$(IniSectionData$ + tempLF$, position + 1, Equal - position - 1)))
 
+    IF INSTR(tempKey$, CHR$(10)) > 0 THEN tempKey$ = MID$(tempKey$, INSTR(tempKey$, CHR$(10)) + 1)
+
     DO WHILE LEFT$(tempKey$, LEN(IniLF$)) = IniLF$
         tempKey$ = MID$(tempKey$, LEN(IniLF$) + 1)
         position = position + LEN(IniLF$)
