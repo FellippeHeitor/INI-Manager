@@ -648,7 +648,7 @@ FUNCTION IniNextKey$
         position = position + LEN(IniLF$)
     LOOP
 
-    position = INSTR(position, IniSectionData$ + tempLF$, IniLF$) + 1
+    position = INSTR(position + 1, IniSectionData$ + tempLF$, IniLF$)
 
     IF LEFT$(tempKey$, 1) = ";" OR LEFT$(tempKey$, 1) = "'" OR INSTR(tempKey$, "[") > 0 OR INSTR(tempKey$, "]") > 0 OR INSTR(tempKey$, "=") > 0 THEN
         GOTO FindKey
