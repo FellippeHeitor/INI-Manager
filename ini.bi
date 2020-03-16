@@ -5,7 +5,7 @@
 'unless you intend to use OPTION _EXPLICIT
 
 'Global variables declaration
-DIM currentIniFileName$
+DIM currentIniFileName$, LoadedFiles$
 DIM currentIniFileLOF AS _UNSIGNED LONG
 DIM IniWholeFile$
 DIM IniSectionData$
