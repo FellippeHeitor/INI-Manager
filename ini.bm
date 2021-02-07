@@ -261,7 +261,7 @@ FUNCTION ReadSetting$ (file$, __section$, __key$)
     SHARED currentIniFileLOF AS _UNSIGNED LONG
 
     IniLoad file$
-    IF IniCODE THEN EXIT SUB
+    IF IniCODE THEN EXIT FUNCTION
 
     IF currentIniFileLOF = 0 OR LEN(LTRIM$(RTRIM$(IniWholeFile$))) = 0 THEN IniCODE = 17: EXIT FUNCTION
 
@@ -270,13 +270,13 @@ FUNCTION ReadSetting$ (file$, __section$, __key$)
     DIM i AS LONG, FoundLF AS _UNSIGNED LONG
 
     section$ = IniFormatSection(__section$)
-    IF IniCODE THEN EXIT SUB
+    IF IniCODE THEN EXIT FUNCTION
 
     'fetch the desired section$
     IniSectionData$ = IniGetSection(section$)
-    IF IniCODE > 0 AND IniCODE <> 17 THEN EXIT SUB
+    IF IniCODE > 0 AND IniCODE <> 17 THEN EXIT FUNCTION
 
-    IF LEN(IniSectionData$) = 0 AND section$ <> "[]" THEN IniCODE = 14: EXIT SUB
+    IF LEN(IniSectionData$) = 0 AND section$ <> "[]" THEN IniCODE = 14: EXIT FUNCTION
 
     IniLastSection$ = section$
 
@@ -287,16 +287,16 @@ FUNCTION ReadSetting$ (file$, __section$, __key$)
     IF key$ = "" THEN
         IF section$ = "[]" THEN IniSectionData$ = IniWholeFile$
         key$ = IniNextKey
-        IF IniCODE THEN EXIT SUB
+        IF IniCODE THEN EXIT FUNCTION
         IF key$ = "" THEN
             IniCODE = 10
-            EXIT SUB
+            EXIT FUNCTION
         END IF
     END IF
 
     IF LEFT$(key$, 1) = ";" OR LEFT$(key$, 1) = "'" OR INSTR(key$, "[") > 0 OR INSTR(key$, "]") > 0 OR INSTR(key$, "=") > 0 THEN
         IniCODE = 12
-        EXIT SUB
+        EXIT FUNCTION
     END IF
 
     IniLastKey$ = key$
@@ -362,7 +362,7 @@ FUNCTION ReadSetting$ (file$, __section$, __key$)
 
     ReadSetting$ = tempValue$
     IniLastSection$ = IniCurrentSection$
-END SUB
+END FUNCTION
 
 FUNCTION IniCurrentSection$
     SHARED IniPosition AS _UNSIGNED LONG, IniSectionData$, IniWholeFile$
@@ -507,12 +507,12 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
                 'add values to the end of the specified section$
                 IniNewFile$ = LEFT$(IniWholeFile$, endSection - 1)
                 IniNewFile$ = IniNewFile$ + key$ + "=" + value$ + IniLF$
-                IF MID$(IniWholeFile$, endSection, 2) <> IniLF$ THEN IniNewFile$ = IniNewFile$ + IniLF$
+                IF MID$(IniWholeFile$, endSection, LEN(IniLF$)) <> IniLF$ THEN IniNewFile$ = IniNewFile$ + IniLF$
                 IniNewFile$ = IniNewFile$ + MID$(IniWholeFile$, endSection)
             ELSE
                 'add values to the end of the file
                 IniNewFile$ = IniWholeFile$
-                IF RIGHT$(IniNewFile$, 2) = IniLF$ THEN
+                IF RIGHT$(IniNewFile$, LEN(IniLF$)) = IniLF$ THEN
                     IniNewFile$ = IniNewFile$ + key$ + "=" + value$
                 ELSE
                     IniNewFile$ = IniNewFile$ + IniLF$ + key$ + "=" + value$
@@ -528,9 +528,9 @@ SUB WriteSetting (file$, __section$, __key$, __value$)
             IniNewFile$ = IniWholeFile$
             IF section$ = "[]" THEN GOTO WriteAtTop
 
-            IF RIGHT$(IniNewFile$, 4) = IniLF$ + IniLF$ THEN
+            IF RIGHT$(IniNewFile$, LEN(IniLF$) * 2) = IniLF$ + IniLF$ THEN
                 IniNewFile$ = IniNewFile$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
-            ELSEIF RIGHT$(IniNewFile$, 2) = IniLF$ THEN
+            ELSEIF RIGHT$(IniNewFile$, LEN(IniLF$)) = IniLF$ THEN
                 IniNewFile$ = IniNewFile$ + IniLF$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
             ELSE
                 IniNewFile$ = IniNewFile$ + IniLF$ + IniLF$ + section$ + IniLF$ + key$ + "=" + value$ + IniLF$
@@ -695,7 +695,7 @@ FUNCTION IniNextSection$ (file$)
     STATIC sectionStart AS _UNSIGNED LONG
 
     IniLoad file$
-    IF LEFT$(IniINFO$, 6) = "ERROR:" THEN EXIT SUB
+    IF LEFT$(IniINFO$, 6) = "ERROR:" THEN EXIT FUNCTION
 
     IniCODE = 0
 
@@ -789,4 +789,3 @@ FUNCTION IniArraySort%% (arr() AS STRING)
     'Returns -1 (true) if any changes were made
     IniArraySort%% = moves& > 0
 END FUNCTION
-
