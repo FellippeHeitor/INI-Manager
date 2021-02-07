@@ -1,4 +1,4 @@
-'INI Manager v1.0
+'INI Manager v1.01
 'Fellippe Heitor, 2017-2021 - fellippe@qb64.org - @fellippeheitor
 
 SUB IniSortSection (file$, __section$)
