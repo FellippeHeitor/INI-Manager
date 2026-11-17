@@ -5,6 +5,7 @@
 The library was rewritten around a single line-by-line parser. The API is the same, but please check **Behavior changes** below.
 
 ### Fixed
+
 - `IniClose` could empty a file you had only read, or overwrite it with the contents of another file.
 - `IniClose` didn't actually close the file.
 - The library kept files open between calls, so programs using fixed file numbers (`OPEN ... AS #1`) could crash with "File already open".
@@ -22,15 +23,18 @@ The library was rewritten around a single line-by-line parser. The API is the sa
 - `iniman` returned non-zero exit codes on success, zero on errors, and always added `.ini` to the file name when writing.
 
 ### Added
+
 - File errors are reported as error 26 (write) or 27 (read) instead of stopping the program, when `ini.bi` is included and QB64-PE is 3.14.1 or newer.
 - Files are saved through a temporary file, so a failed save never leaves a half-written file behind. Read-only files are never replaced.
 - `IniIsError%%`, `IniResetIteration`.
+- `IniSetAddQuotes`, `IniSetAllowBasicComments` and `IniSetAutoCommit`, plus the `IniDisableAddQuotes` setting, from the reduced version bundled with QB64-PE, so both use the same files. With `IniDisableAddQuotes`, values with spaces are written without quotes, but values that need quotes to read back correctly still get them.
 - Lines starting with `#` are comments.
 - Inside quoted values, `""` stands for one quotation mark.
 - Updating a key keeps its spelling, indentation and inline comment.
 - Regression tests and a GitHub Actions workflow.
 
 ### Behavior changes
+
 - `IniNextSection$` now works like sequential `ReadSetting$`: it returns one section per call, then `""` with `IniCODE = 24`. Before, the last section came together with code 24. Loops that print first and check the code afterwards will now print an extra empty line; check the code before using the result (see README).
 - Sequential reading picks up where it left off even after the file changes, and `IniResetIteration` starts it over.
 - New global keys go after the existing global keys (before, they went to the top of the file).

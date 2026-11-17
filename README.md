@@ -124,11 +124,16 @@ With `state` true (-1), the file is read from disk again on every call, so chang
 
 ### Settings
 
-| Variable | Default | Effect |
-| --- | --- | --- |
-| `IniDisableAutoCommit` | 0 | When -1, changes are kept in memory until you call `IniCommit` or `IniClose`, or switch to another file. Useful for many changes in a row. |
-| `IniAllowBasicComments` | 0 | When -1, `'` starts an inline comment after a value. |
-| `IniForceReload` | 0 | Set with `IniSetForceReload`. |
+You can set these variables directly, or use the matching sub (`state` is true (-1) or false (0)).
+
+| Variable | Sub | Default | Effect |
+| --- | --- | --- | --- |
+| `IniDisableAutoCommit` | `IniSetAutoCommit state` | 0 (auto commit on) | When -1, changes are kept in memory until you call `IniCommit` or `IniClose`, or switch to another file. Useful for many changes in a row. |
+| `IniAllowBasicComments` | `IniSetAllowBasicComments state` | 0 | When -1, `'` starts an inline comment after a value. |
+| `IniForceReload` | `IniSetForceReload state` | 0 | When -1, the file is read from disk on every call. |
+| `IniDisableAddQuotes` | `IniSetAddQuotes state` | 0 (add quotes on) | When -1, values with spaces are written without quotation marks (`path=C:\Program Files\x.bas`). Values that need quotes to read back correctly (with `;`, `'` or a leading `"`) still get them. |
+
+Note that `IniSetAutoCommit` and `IniSetAddQuotes` take the opposite of the variable they set: `IniSetAutoCommit -1` sets `IniDisableAutoCommit = 0`.
 
 ## Status codes
 

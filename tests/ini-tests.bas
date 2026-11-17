@@ -227,6 +227,30 @@ IniSetForceReload -1
 Check "reloaded", ReadSetting$(T$ + "reload.ini", "s", "k"), "2"
 IniSetForceReload 0
 
+Section "Setter subs"
+WriteRaw T$ + "setters.ini", "[s]" + LF$ + "c=5 'five" + LF$
+IniSetAddQuotes 0
+WriteSetting T$ + "setters.ini", "s", "path", "C:\Program Files\x.bas"
+WriteSetting T$ + "setters.ini", "s", "semi", "a;b"
+WriteSetting T$ + "setters.ini", "s", "apos", "it's"
+WriteSetting T$ + "setters.ini", "s", "quote", CHR$(34) + "q" + CHR$(34)
+IniSetAddQuotes -1
+WriteSetting T$ + "setters.ini", "s", "spaced", "a b"
+Check "add quotes off/on", ReadRaw$(T$ + "setters.ini"), "[s]" + LF$ + "c=5 'five" + LF$ + "path=C:\Program Files\x.bas" + LF$ + "semi=" + CHR$(34) + "a;b" + CHR$(34) + LF$ + "apos=" + CHR$(34) + "it's" + CHR$(34) + LF$ + "quote=" + CHR$(34) + CHR$(34) + CHR$(34) + "q" + CHR$(34) + CHR$(34) + CHR$(34) + LF$ + "spaced=" + CHR$(34) + "a b" + CHR$(34) + LF$
+Check "unquoted path reads back", ReadSetting$(T$ + "setters.ini", "s", "path"), "C:\Program Files\x.bas"
+Check "quoted value reads back", ReadSetting$(T$ + "setters.ini", "s", "quote"), CHR$(34) + "q" + CHR$(34)
+IniSetAllowBasicComments -1
+Check "basic comments on", ReadSetting$(T$ + "setters.ini", "s", "c"), "5"
+Check "quoted ' with basic comments on", ReadSetting$(T$ + "setters.ini", "s", "apos"), "it's"
+IniSetAllowBasicComments 0
+Check "basic comments off", ReadSetting$(T$ + "setters.ini", "s", "c"), "5 'five"
+IniSetAutoCommit 0
+WriteSetting T$ + "setters.ini", "s", "c", "6"
+CheckN "auto commit off", INSTR(ReadRaw$(T$ + "setters.ini"), "c=6"), 0
+IniSetAutoCommit -1
+IniCommit
+CheckN "auto commit on + IniCommit", INSTR(ReadRaw$(T$ + "setters.ini"), "c=6" + LF$) > 0, -1
+
 '------------------------------------------------------------ iteration
 Section "Reading all keys"
 WriteRaw T$ + "iter.ini", "; file comment" + LF$ + "g=0" + LF$ + "[database]" + LF$ + "; use IP address" + LF$ + "; really" + LF$ + "server=1.2.3.4" + LF$ + "port=143 ; ok" + LF$ + LF$ + "[owner]" + LF$ + "name=" + CHR$(34) + "John Doe" + CHR$(34) + LF$

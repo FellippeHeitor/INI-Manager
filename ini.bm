@@ -523,6 +523,22 @@ SUB IniClose
     IniResetIteration
 END SUB
 
+SUB IniSetAddQuotes (state AS _BYTE)
+    'When disabled, values only get quotation marks if they could not be read back without them
+    SHARED IniDisableAddQuotes
+    IF state THEN IniDisableAddQuotes = 0 ELSE IniDisableAddQuotes = -1
+END SUB
+
+SUB IniSetAllowBasicComments (state AS _BYTE)
+    SHARED IniAllowBasicComments
+    IF state THEN IniAllowBasicComments = -1 ELSE IniAllowBasicComments = 0
+END SUB
+
+SUB IniSetAutoCommit (state AS _BYTE)
+    SHARED IniDisableAutoCommit
+    IF state THEN IniDisableAutoCommit = 0 ELSE IniDisableAutoCommit = -1
+END SUB
+
 SUB IniSetForceReload (state AS _BYTE)
     SHARED IniForceReload
     IF state THEN IniForceReload = -1 ELSE IniForceReload = 0
@@ -805,9 +821,13 @@ END FUNCTION
 
 FUNCTION IniEncodeValue$ (v$)
     'Adds quotation marks when the value would not read back as written
+    SHARED IniDisableAddQuotes
     DIM needQuotes%%, i&, out$
 
-    needQuotes%% = INSTR(v$, " ") > 0 OR INSTR(v$, CHR$(9)) > 0 OR INSTR(v$, ";") > 0 OR INSTR(v$, "'") > 0
+    needQuotes%% = INSTR(v$, ";") > 0 OR INSTR(v$, "'") > 0
+    IF IniDisableAddQuotes = 0 THEN
+        IF INSTR(v$, " ") > 0 OR INSTR(v$, CHR$(9)) > 0 THEN needQuotes%% = -1
+    END IF
     IF LEFT$(v$, 1) = CHR$(34) THEN needQuotes%% = -1
 
     IF NOT needQuotes%% THEN IniEncodeValue$ = v$: EXIT FUNCTION

@@ -21,6 +21,7 @@ DIM IniLastKey$
 DIM IniDisableAutoCommit
 DIM IniAllowBasicComments
 DIM IniForceReload
+DIM IniDisableAddQuotes
 
 'Internal state
 DIM IniCurrentFile$
