@@ -1,0 +1,19 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build QB64-PE
+        run: |
+          git clone --depth 1 --branch v4.7.0-GLFW https://github.com/QB64-Phoenix-Edition/QB64pe.git "$HOME/qb64pe"
+          bash "$HOME/qb64pe/setup_lnx.sh" dont_run
+
+      - name: Run tests
+        run: sh tests/run-tests.sh "$HOME/qb64pe"

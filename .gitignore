@@ -1,0 +1,14 @@
+# compiled programs
+*.exe
+*_start.command
+ini-demo1
+ini-demo2
+ini-demo3
+iniman
+tests/ini-tests
+tests/_bin/
+tests/_tmp/
+
+# files created by the demos
+test.ini
+*.inimgr.tmp
